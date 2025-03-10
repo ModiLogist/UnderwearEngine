@@ -1,0 +1,22 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "underwearengine",
+  "dependencies": [
+    "simpleini",
+    "rsm-binary-io",
+    "directxtk",
+    "rapidcsv",
+    "spdlog",
+    "catch2"
+  ],
+  "description": "The New Gentleman",
+  "homepage": "https://github.com/ModiLogist/UnderwearEngine",
+  "license": "MIT",
+  "vcpkg-configuration": {
+    "default-registry": {
+      "kind": "git",
+      "repository": "https://github.com/microsoft/vcpkg",
+      "baseline": "42ee04ed4525b833c03b14657e020ee6426fe864"
+    }
+  }
+}

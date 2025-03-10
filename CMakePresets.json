@@ -1,0 +1,89 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 21,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "cmake-dev",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_CONFIGURATION_TYPES": "Release",
+        "CMAKE_CXX_FLAGS": "/EHsc /MP /W4 /external:anglebrackets /external:W0 /Zc:inline /JMC- $penv{CXXFLAGS}"
+      },
+      "errors": {
+        "deprecated": true
+      },
+      "warnings": {
+        "deprecated": true,
+        "dev": true
+      }
+    },
+    {
+      "name": "vcpkg",
+      "hidden": true,
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+    },
+    {
+      "name": "windows",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static"
+      }
+    },
+    {
+      "name": "vs2022",
+      "hidden": true,
+      "generator": "Visual Studio 17 2022",
+      "toolset": "v143"
+    },
+    {
+      "name": "universal",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build"
+    },
+    {
+      "name": "vr",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/buildvr",
+      "cacheVariables": {
+        "BUILD_SKYRIMVR": true
+      }
+    },
+    {
+      "name": "vs2022-windows-vcpkg-universal",
+      "inherits": [
+        "cmake-dev",
+        "vcpkg",
+        "windows",
+        "vs2022",
+        "universal"
+      ]
+    },
+    {
+      "name": "vs2022-windows-vcpkg-vr",
+      "inherits": [
+        "cmake-dev",
+        "vcpkg",
+        "windows",
+        "vs2022",
+        "vr"
+      ]
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "vs2022-windows-vcpkg-universal",
+      "configurePreset": "vs2022-windows-vcpkg-universal",
+      "configuration": "Release"
+    },
+    {
+      "name": "vs2022-windows-vcpkg-vr",
+      "configurePreset": "vs2022-windows-vcpkg-vr",
+      "configuration": "Release"
+    }
+  ]
+}
