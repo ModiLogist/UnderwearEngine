@@ -53,9 +53,6 @@ class Core : public Singleton<Core> {
   public:
     bool GetItemStatus(const bool isFemale, const size_t cat, const size_t choice);
     void SetItemStatus(const bool isFemale, const size_t cat, const size_t choice, const bool value);
-    std::vector<size_t> GetItems(const bool isFemale, const size_t groupIdx, const size_t cat, const bool onlyActive);
-
-  private:
     std::vector<size_t> GetItems(const bool isFemale, const NudeGroup* meshGroup, const size_t cat, const bool onlyActive);
     /**
      * @brief Retrieves the underwear object based on the specified parameters.
@@ -70,12 +67,12 @@ class Core : public Singleton<Core> {
     RE::TESObjectARMO* GetUnderwear(const bool isFemale, const NudeGroup* meshGroup, const size_t cat, const size_t choice, const bool onlyActive);
 
   public:
+    RE::ActorEquipManager* eq;
     Util::eRes ProcessActor(RE::Actor* actor);
-    RE::TESObjectARMO* GetActorItem(RE::Actor* actor);
-    Util::eRes SetActorItem(RE::Actor* actor, const int itemIdx, const bool isUser = false);
+    RE::TESObjectARMO* GetActorUndies(RE::Actor* actor);
+    Util::eRes SetActorUndies(RE::Actor* actor, const int itemIdx, const bool isUser = false);
 
   private:
     std::map<RE::Actor*, Util::eRes> processedActors;
     std::pair<NudeGroup*, size_t> CategorizeNPC(RE::TESNPC* npc);
-    std::pair<RE::TESBoundObject*, bool> ForceUnderwear(RE::Actor* actor, RE::TESObjectARMO* underwear, const bool ifUpdate = false);
 };
