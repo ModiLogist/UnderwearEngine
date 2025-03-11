@@ -8,7 +8,6 @@
 #include <spdlog/sinks/basic_file_sink.h>
 
 using namespace std::literals;
-using namespace REL::literals;
 
 #include <Version.h>
 

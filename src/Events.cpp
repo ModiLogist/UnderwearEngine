@@ -1,4 +1,4 @@
-
+#include <Core.h>
 #include <Events.h>
 
 void Events::RegisterEvents() {
@@ -30,7 +30,8 @@ RE::BSEventNotifyControl Events::ProcessEvent(const RE::TESEquipEvent* event, RE
 
 RE::BSEventNotifyControl Events::ProcessEvent(const RE::TESObjectLoadedEvent* event, RE::BSTEventSource<RE::TESObjectLoadedEvent>*) {
   if (!event) return RE::BSEventNotifyControl::kContinue;
-  // const auto actor = RE::TESForm::LookupByID<RE::Actor>(event->formID);
+  // const auto actor = RE::TESForm::LookupByID<RE::Actor>(event->GetFormID());
+  // if (actor && actor->IsPlayerRef()) core->PostProcessActors();
   // auto base = Core::GetSingleton();
   // base->ProcessActor(actor);
   return RE::BSEventNotifyControl::kContinue;

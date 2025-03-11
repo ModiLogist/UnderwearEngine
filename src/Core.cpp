@@ -2,7 +2,12 @@
 
 Core *core = Core::GetSingleton();
 
-void Core::LoadRaces() {
+bool Core::LoadRaces() {
+  eq = RE::ActorEquipManager::GetSingleton();
+  if (!eq) {
+    SKSE::log::critical("Could not get the ActorEquipManager singleton!");
+    return false;
+  }
   SKSE::log::info("Processing races...");
   const auto &allRaces = Util::SEDH()->GetFormArray<RE::TESRace>();
   for (const auto &race : allRaces) {
@@ -11,6 +16,7 @@ void Core::LoadRaces() {
     GetSkinRaceMesh(race, race->skin, true);
   }
   SKSE::log::info("Finished processing races and found [{}] mesh groups for men, and [{}] mesh groups for women among them.", malGroups.size(), femGroups.size());
+  return true;
 }
 
 void Core::LoadNPCs() {
@@ -43,7 +49,7 @@ Core::NudeGroup *Core::GetSkinRaceMesh(RE::TESRace *race, RE::TESObjectARMO *ski
   RE::BGSTextureSet *text{nullptr};
   std::string mesh;
   if (!race || !skin) {
-    SKSE::log::critical("\tSomething triggered nude to check a skin mesh for race:[0x{:x}] and skin:[0x{:x}]", race ? race->formID : 0x0, skin ? skin->formID : 0x0);
+    SKSE::log::critical("\tSomething triggered nude to check a skin mesh for race:[0x{:x}] and skin:[0x{:x}]", race ? race->GetFormID() : 0x0, skin ? skin->GetFormID() : 0x0);
     return nullptr;
   }
   for (auto &aa : skin->armorAddons) {
@@ -61,7 +67,7 @@ Core::NudeGroup *Core::GetSkinRaceMesh(RE::TESRace *race, RE::TESObjectARMO *ski
     newGroup.mesh = mesh;
     newGroup.texts = Util::ProduceOrGetFormList(cFL[isFemale ? 1 : 0] + std::to_string(groups.size()));
     if (newGroup.texts->forms.size() > 0) {
-      SKSE::log::debug("\tThe formlist [0x{:x}] already has some forms in it.", newGroup.texts->forms[0]->formID);
+      SKSE::log::debug("\tThe formlist [0x{:x}] already has some forms in it.", newGroup.texts->forms[0]->GetFormID());
     }
     if (text && newGroup.texts) newGroup.texts->AddForm(text);
     SKSE::log::debug("\tAdded mesh [{}] to {} meshes.", mesh, isFemale ? "women" : "men");
@@ -82,7 +88,7 @@ void Core::LoadItems() {
   const auto &armorList = Util::SEDH()->GetFormArray<RE::TESObjectARMO>();
   for (const auto &armor : armorList) {
     if (armor->HasKeyword(Util::Key(Util::kyTngUw)) && armor->armorAddons.size() > 0) {
-      allUndies.insert(armor->formID);
+      allUndies.insert(armor->GetFormID());
       if (armor->HasKeyword(Util::Key(Util::kyItemM))) ProcessItem(armor, false);
       if (armor->HasKeyword(Util::Key(Util::kyItemF))) ProcessItem(armor, true);
     }
@@ -95,12 +101,12 @@ void Core::ProcessItem(RE::TESObjectARMO *item, const bool isFemale) {
   auto &itemRace = item->armorAddons[0]->race;
   if (itemRace == Util::Race(Util::raceDefault) && item->armorAddons[0]->additionalRaces.size() > 0) itemRace = item->armorAddons[0]->additionalRaces[0];
   if (!IsValidRace(itemRace)) {
-    SKSE::log::debug("\tThe item[0x{:x}:{}]'s race[{}] is not a  valid race.", item->formID, item->GetFormEditorID(), itemRace ? itemRace->GetFormEditorID() : "null");
+    SKSE::log::debug("\tThe item[0x{:x}:{}]'s race[{}] is not a  valid race.", item->GetFormID(), item->GetFormEditorID(), itemRace ? itemRace->GetFormEditorID() : "null");
     return;
   }
   auto group = GetSkinRaceMesh(itemRace, itemRace->skin, isFemale);
   if (!group) {
-    SKSE::log::debug("\tThe item[0x{:x}:{}] is not categorized properly in the underwear list.", item->formID, item->GetFormEditorID());
+    SKSE::log::debug("\tThe item[0x{:x}:{}] is not categorized properly in the underwear list.", item->GetFormID(), item->GetFormEditorID());
     return;
   }
   auto idx = allList.size();
@@ -147,13 +153,13 @@ void Core::AddItemsToCategory(const std::string &name, const std::vector<SEFormL
         if (item && IsUnderwear(item)) {
           auto it = std::find(undiesRef.begin(), undiesRef.end(), item);
           if (it == undiesRef.end()) {
-            SKSE::log::critical("\tThe item [0x{:x}] is not categorized properly in the underwear list.", item->formID);
+            SKSE::log::critical("\tThe item [0x{:x}] is not categorized properly in the underwear list.", item->GetFormID());
             continue;
           }
           auto idx = std::distance(undiesRef.begin(), it);
           cat.undies[isFemale ? 1 : 0][idx] = true;
           categories[0].undies[isFemale ? 1 : 0][idx] = false;
-          SKSE::log::info("\tAdded item [0x{:x}] to category [{}].", item->formID, name);
+          SKSE::log::info("\tAdded item [0x{:x}] to category [{}].", item->GetFormID(), name);
         } else {
           SKSE::log::error("\tThe item [0x{:x}] from file [{}] is not an underwear!", underwear.first, underwear.second);
         }
@@ -172,12 +178,6 @@ bool Core::GetItemStatus(const bool isFemale, const size_t cat, const size_t cho
 void Core::SetItemStatus(const bool isFemale, const size_t cat, const size_t choice, const bool value) {
   if (cat >= categories.size() || choice >= (isFemale ? femUndies.size() : malUndies.size())) return;
   categories[cat].undies[isFemale ? 1 : 0][choice] = value;
-}
-
-std::vector<size_t> Core::GetItems(const bool isFemale, const size_t groupIdx, const size_t cat, const bool onlyActive) {
-  if (groupIdx >= (isFemale ? femGroups.size() : malGroups.size()) || cat >= categories.size()) return {};
-  auto meshGroup = &(isFemale ? femGroups : malGroups)[groupIdx];
-  return GetItems(isFemale, meshGroup, cat, onlyActive);
 }
 
 std::vector<size_t> Core::GetItems(const bool isFemale, const NudeGroup *meshGroup, const size_t cat, const bool onlyActive) {
@@ -207,38 +207,37 @@ Util::eRes Core::ProcessActor(RE::Actor *actor) {
     return Util::resFail;
   }
   auto down = actor->GetWornArmor(Util::cSlot52, false);
-  if (down && down != Util::TngCover()) {
-    if (!IsUnderwear(down))
-      SKSE::log::debug("The NPC [0x{:x}:{}] is wearing an item [0x{:x}] on slot 52! They won't get an underwear.", npc->GetFormID(), npc->GetFormEditorID(), down->formID);
+  if (down && Util::FormToLocView(down) != Util::coverID) {
+    if (!IsUnderwear(down)) SKSE::log::debug("The NPC [0x{:x}] is wearing an item [0x{:x}] on slot 52! They won't get an underwear.", npc->GetFormID(), down->GetFormID());
     processedActors[actor] = Util::resOk;
     return Util::resOk;
   }
   auto fl = Util::FormList(Util::flExcluded);
   if (!fl) SKSE::log::critical("NUDE could not find the exclusion form list! Please make sure the plugin is enabled and the form list is not overridden");
   if (fl && fl->HasForm(actor)) {
-    SKSE::log::debug("The NPC [0x{:x}:{}] is in the exclusion list. They won't get an underwear.", npc->GetFormID(), npc->GetFormEditorID());
+    SKSE::log::debug("The NPC [0x{:x}] is in the exclusion list. They won't get an underwear.", npc->GetFormID());
     processedActors[actor] = Util::resOk;
     return Util::resOk;
   }
-  processedActors[actor] = SetActorItem(actor, Util::cDef, false);
+  processedActors[actor] = SetActorUndies(actor, Util::cDef);
   return processedActors[actor];
 }
 
-RE::TESObjectARMO *Core::GetActorItem(RE::Actor *actor) {
+RE::TESObjectARMO *Core::GetActorUndies(RE::Actor *actor) {
   if (!actor) return nullptr;
   auto down = actor->GetWornArmor(Util::cSlot52, false);
   if (down && IsUnderwear(down)) return down;
   return nullptr;
 }
 
-Util::eRes Core::SetActorItem(RE::Actor *actor, const int itemIdx, const bool isUser) {
+Util::eRes Core::SetActorUndies(RE::Actor *actor, const int itemIdx, const bool isUser) {
   auto npc = actor ? actor->GetActorBase() : nullptr;
   if (!npc) return Util::resFail;
   auto fl = Util::FormList(Util::flExcluded);
   if (!fl) SKSE::log::critical("NUDE could not find the exclusion form list! Please make sure the plugin is enabled and the form list is not overridden");
   if (itemIdx == Util::cNul) {
-    if (auto underwear = GetActorItem(actor)) {
-      RE::ActorEquipManager::GetSingleton()->UnequipObject(actor, underwear, nullptr, 1, nullptr, false, false, false, true);
+    if (auto underwear = GetActorUndies(actor)) {
+      eq->UnequipObject(actor, underwear, nullptr, 1, nullptr, false, false, false, true);
       actor->RemoveItem(underwear, 1, RE::ITEM_REMOVE_REASON::kRemove, nullptr, nullptr);
     }
     if (fl) {
@@ -250,32 +249,37 @@ Util::eRes Core::SetActorItem(RE::Actor *actor, const int itemIdx, const bool is
   }
   if (fl && fl->HasForm(actor)) {
     for (RE::BSTArray<RE::TESForm *>::const_iterator it = fl->forms.begin(); it < fl->forms.end(); it++) {
-      if ((*it)->formID == actor->formID) {
+      if ((*it)->GetFormID() == actor->GetFormID()) {
         fl->forms.erase(it);
         break;
       }
     }
   }
   auto npcCat = CategorizeNPC(npc);
+  if (!npcCat.first) {
+    SKSE::log::error("CategorizeNPC returned null for NPC [0x{:x}:{}].", npc->GetFormID(), npc->GetFormEditorID());
+    return Util::resFail;
+  }
+  RE::TESObjectARMO *underwear = nullptr;
+  auto inv = actor->GetInventoryCounts([=](RE::TESBoundObject &obj) { return IsUnderwear(&obj); });
+  if (inv.size() > 0) {
+    underwear = inv.begin()->first->As<RE::TESObjectARMO>();
+  }
+  if (!underwear) {
   auto availableItems = GetItems(npc->IsFemale(), npcCat.first, npcCat.second, itemIdx == Util::cDef || !isUser);
   if (availableItems.size() == 0) {
     SKSE::log::warn("The NPC [0x{:x}:{}] does not have any underwear available to them.", npc->GetFormID(), npc->GetFormEditorID());
     return Util::resWarn;
   }
-  auto idx = (itemIdx == Util::cDef) ? (npc->formID % availableItems.size()) : static_cast<size_t>(itemIdx);
-  auto underwear = GetUnderwear(npc->IsFemale(), npcCat.first, npcCat.second, idx, true);
+    auto idx = (itemIdx == Util::cDef) ? (npc->GetFormID() % availableItems.size()) : static_cast<size_t>(itemIdx);
+    underwear = GetUnderwear(npc->IsFemale(), npcCat.first, npcCat.second, idx, true);
   if (!underwear) {
-    SKSE::log::error("The NPC [0x{:x}:{}] could not find the underwear [{}] in the list.", npc->GetFormID(), npc->GetFormEditorID(), idx);
+      SKSE::log::error("Could not find the underwear [{}] in the list.", idx);
     return Util::resFail;
   }
-  auto toWear = ForceUnderwear(actor, underwear);
-  if (!toWear.first) {
-    SKSE::log::error("The NPC [0x{:x}:{}] could not find the underwear [0x{:x}] in their inventory.", npc->GetFormID(), npc->GetFormEditorID(), underwear->formID);
-    return Util::resFail;
   }
-
-  SKSE::log::debug("The NPC [0x{:x}:{}] would wear the underwear [0x{:x}].", npc->GetFormID(), npc->GetFormEditorID(), toWear.first->formID);
-  if (!toWear.second) RE::ActorEquipManager::GetSingleton()->EquipObject(actor, toWear.first);
+  actor->AddObjectToContainer(underwear, nullptr, 1, nullptr);
+  eq->EquipObject(actor, underwear, nullptr, 1, nullptr, false, false, false, true);
   return Util::resOk;
 }
 
@@ -285,19 +289,4 @@ std::pair<Core::NudeGroup *, size_t> Core::CategorizeNPC(RE::TESNPC *npc) {
   if (!meshGroup) return {nullptr, 0};
   size_t cat = 0;  // TODO make the category to match the right categories
   return std::make_pair(meshGroup, cat);
-}
-
-std::pair<RE::TESBoundObject *, bool> Core::ForceUnderwear(RE::Actor *actor, RE::TESObjectARMO *underwear, const bool ifUpdate) {
-  auto inv = actor->GetInventory();
-  for (const auto &[item, invData] : inv) {
-    if (!item || !IsUnderwear(item)) continue;
-    const auto &[count, entry] = invData;
-    if (count >= 1 && entry) {
-      return {item, entry->IsWorn()};
-    }
-  }
-  if (ifUpdate) return {nullptr, false};
-  // SKSE::log::debug("Adding underwear [0x{:x}] to the inventory of the actor [0x{:x}:{}].", underwear->formID, actor->GetFormID(), actor->GetFormEditorID());
-  actor->AddObjectToContainer(underwear, nullptr, 1, nullptr);
-  return ForceUnderwear(actor, underwear, true);
 }

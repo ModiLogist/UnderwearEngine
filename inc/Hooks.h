@@ -7,7 +7,7 @@ class Hooks {
   private:
     struct Load3D {
         using Target = RE::Character;
-        inline static constexpr size_t index{0x6A};
+        inline static constexpr size_t index{0x6a};
 
         static RE::NiAVObject* thunk(RE::Character* actor, bool backgroundLoading);
 

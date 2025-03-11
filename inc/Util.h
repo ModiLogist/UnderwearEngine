@@ -6,16 +6,18 @@ extern Core* core;
 
 class Util {
   public:
-    inline static constexpr std::string_view cName{"UnderwearEngine.esp"};
-    inline static constexpr std::string_view cTng{"TheNewGentleman.esp"};
-    inline static constexpr std::string_view cSkyrim{"Skyrim.esm"};
     inline static constexpr char cDelimChar{'~'};
     inline static constexpr char cColonChar{':'};
     inline static constexpr int cNul{-1};
     inline static constexpr int cDef{-2};
 
+    inline static constexpr std::string_view cName{"UnderwearEngine.esp"};
+    inline static constexpr std::string_view cTng{"TheNewGentleman.esp"};
+    inline static constexpr std::string_view cSkyrim{"Skyrim.esm"};
     inline static constexpr RE::BGSBipedObjectForm::BipedObjectSlot cSlot32{RE::BGSBipedObjectForm::BipedObjectSlot::kBody};
     inline static constexpr RE::BGSBipedObjectForm::BipedObjectSlot cSlot52{RE::BGSBipedObjectForm::BipedObjectSlot::kModPelvisSecondary};
+    inline static constexpr SEFormLocView defTextIDs[2] = {{0x3ede8, cSkyrim}, {0x3ede7, cSkyrim}};
+    inline static constexpr SEFormLocView coverID{0xAFF, cTng};
 
     enum eRes { resOk = 0, resFail = 1, resWarn = 2 };
 
@@ -65,11 +67,6 @@ class Util {
       return fls[idx];
     }
 
-    static RE::TESObjectARMO* TngCover() {
-      if (!cover) cover = LoadForm<RE::TESObjectARMO>(coverLoc);
-      return cover;
-    }
-
     static RE::BGSListForm* ProduceOrGetFormList(const std::string& edid) {
       auto& allFLs = SEDH()->GetFormArray<RE::BGSListForm>();
       auto it = std::find_if(allFLs.begin(), allFLs.end(), [&](const auto& fl) { return fl && fl->GetFormEditorID() == edid.c_str(); });
@@ -102,7 +99,7 @@ class Util {
 
     static void MsgBox(const char* message) { RE::DebugMessageBox(message); }
 
-    static SEFormLoc FormToLoc(const RE::TESForm* form) {
+    static SEFormLoc FormToLoc(RE::TESForm* form) {
       std::string filename = form->GetFile(0) ? std::string(form->GetFile(0)->GetFilename()) : "NoFile";
       auto formID = form->GetFormID() < 0xFF000000 ? form->GetLocalFormID() : form->GetFormID();
       return {formID, filename};
@@ -143,7 +140,4 @@ class Util {
 
     inline static constexpr SEFormLocView flIDs[FLCount]{{0xEFF, cName}};
     inline static RE::BGSListForm* fls[FLCount];
-
-    inline static constexpr SEFormLocView coverLoc{0xAFF, cTng};
-    inline static RE::TESObjectARMO* cover;
 };

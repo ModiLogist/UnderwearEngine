@@ -4,12 +4,11 @@
 
 class Core : public Singleton<Core> {
   public:
-    void LoadRaces();
+    bool LoadRaces();
     void LoadNPCs();
 
   private:
     inline static const std::string cFL[2]{"NudeMalTexts:", "NudeFemTexts:"};
-
     struct NudeGroup {
         std::string mesh;
         RE::BGSListForm* texts;

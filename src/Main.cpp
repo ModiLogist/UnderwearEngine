@@ -3,6 +3,8 @@
 #include <Hooks.h>
 #include <Util.h>
 
+#include <thread>
+
 static void InitializeLogging() {
   auto path{SKSE::log::log_directory()};
   if (!path) {
@@ -26,7 +28,10 @@ static void EventListener(SKSE::MessagingInterface::Message* message) {
       Util::MsgBox(err);
       return;
     }
-    core->LoadRaces();
+    if (!core->LoadRaces()) {
+      Util::MsgBox("NUDE: Could not load necessary data, it won't apply the underwear to NPCs!");
+      return;
+    }
     core->LoadNPCs();
     core->LoadItems();
     SKSE::log::info("{} finished initialization.", Util::cName);
