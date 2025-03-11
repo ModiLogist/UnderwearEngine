@@ -194,7 +194,8 @@ std::vector<size_t> Core::GetItems(const bool isFemale, const NudeGroup *meshGro
 
 RE::TESObjectARMO *Core::GetUnderwear(const bool isFemale, const NudeGroup *meshGroup, const size_t cat, const size_t choice, const bool onlyActive) {
   auto items = GetItems(isFemale, meshGroup, cat, onlyActive);
-  return choice < items.size() ? malUndies[items[choice]] : nullptr;
+  if (choice >= items.size()) return nullptr;
+  return isFemale ? femUndies[items[choice]] : malUndies[items[choice]];
 }
 
 Util::eRes Core::ProcessActor(RE::Actor *actor) {
@@ -266,17 +267,17 @@ Util::eRes Core::SetActorUndies(RE::Actor *actor, const int itemIdx, const bool 
     underwear = inv.begin()->first->As<RE::TESObjectARMO>();
   }
   if (!underwear) {
-  auto availableItems = GetItems(npc->IsFemale(), npcCat.first, npcCat.second, itemIdx == Util::cDef || !isUser);
-  if (availableItems.size() == 0) {
-    SKSE::log::warn("The NPC [0x{:x}:{}] does not have any underwear available to them.", npc->GetFormID(), npc->GetFormEditorID());
-    return Util::resWarn;
-  }
+    auto availableItems = GetItems(npc->IsFemale(), npcCat.first, npcCat.second, itemIdx == Util::cDef || !isUser);
+    if (availableItems.size() == 0) {
+      SKSE::log::warn("The NPC [0x{:x}:{}] does not have any underwear available to them.", npc->GetFormID(), npc->GetFormEditorID());
+      return Util::resWarn;
+    }
     auto idx = (itemIdx == Util::cDef) ? (npc->GetFormID() % availableItems.size()) : static_cast<size_t>(itemIdx);
     underwear = GetUnderwear(npc->IsFemale(), npcCat.first, npcCat.second, idx, true);
-  if (!underwear) {
+    if (!underwear) {
       SKSE::log::error("Could not find the underwear [{}] in the list.", idx);
-    return Util::resFail;
-  }
+      return Util::resFail;
+    }
   }
   actor->AddObjectToContainer(underwear, nullptr, 1, nullptr);
   eq->EquipObject(actor, underwear, nullptr, 1, nullptr, false, false, false, true);
