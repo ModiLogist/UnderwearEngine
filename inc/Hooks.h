@@ -7,13 +7,23 @@ class Hooks {
   private:
     struct Load3D {
         using Target = RE::Character;
+        static constexpr std::string_view name{"Load3D"};
         inline static constexpr size_t index{0x6a};
 
         static RE::NiAVObject* thunk(RE::Character* actor, bool backgroundLoading);
 
         inline static REL::Relocation<decltype(thunk)> func;
+    };
 
-        static constexpr std::string_view name{"Load3D"};
+    struct RemoveItem {
+        using Target = RE::Character;
+        static constexpr std::string_view name{"RemoveItem"};
+        inline static constexpr size_t index{0x56};
+
+        static RE::ObjectRefHandle thunk(RE::Character* actor, RE::TESBoundObject* item, std::int32_t count, RE::ITEM_REMOVE_REASON reason, RE::ExtraDataList* extraList,
+                                         RE::TESObjectREFR* moveToRef, const RE::NiPoint3* dropLoc = 0, const RE::NiPoint3* rotate = 0);
+
+        inline static REL::Relocation<decltype(thunk)> func;
     };
 
     template <class T>

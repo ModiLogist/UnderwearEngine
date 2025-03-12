@@ -1,8 +1,10 @@
 #pragma once
 
 class Core;
+class Events;
 
 extern Core* core;
+extern Events* events;
 
 class Util {
   public:
@@ -16,15 +18,30 @@ class Util {
     inline static constexpr std::string_view cSkyrim{"Skyrim.esm"};
     inline static constexpr RE::BGSBipedObjectForm::BipedObjectSlot cSlot32{RE::BGSBipedObjectForm::BipedObjectSlot::kBody};
     inline static constexpr RE::BGSBipedObjectForm::BipedObjectSlot cSlot52{RE::BGSBipedObjectForm::BipedObjectSlot::kModPelvisSecondary};
-    inline static constexpr SEFormLocView defTextIDs[2] = {{0x3ede8, cSkyrim}, {0x3ede7, cSkyrim}};
     inline static constexpr SEFormLocView coverID{0xAFF, cTng};
 
     enum eRes { resOk = 0, resFail = 1, resWarn = 2 };
 
     enum eBoolSetting { bsSomething, BoolSettingCount };
-    enum eKeywords { kyManMer, kyBeast, kyCreature, kyVampire, kyTngUw, kyTngProcessed, kyTngReady, kyTngIgnored, kyItemM, kyItemF, KeywordsCount };
+    enum eKeywords {
+      kyManMer,
+      kyBeast,
+      kyCreature,
+      kyVampire,
+      kyTngUw,
+      kyTngProcessed,
+      kyTngReady,
+      kyTngIgnored,
+      kyTngCovering,
+      kyTngFemCovering,
+      kyTngMalCovering,
+      kyItemM,
+      kyItemF,
+      kyItemFake,
+      KeywordsCount
+    };
     enum eRaces { raceDefault, raceDefBeast, RacesCount };
-    enum eFLs { flExcluded, FLCount };
+    enum eFLs { flExcluded, flPCUndies, FLCount };
 
   public:
     static RE::TESDataHandler* SEDH() {
@@ -67,21 +84,6 @@ class Util {
       return fls[idx];
     }
 
-    static RE::BGSListForm* ProduceOrGetFormList(const std::string& edid) {
-      auto& allFLs = SEDH()->GetFormArray<RE::BGSListForm>();
-      auto it = std::find_if(allFLs.begin(), allFLs.end(), [&](const auto& fl) { return fl && fl->GetFormEditorID() == edid.c_str(); });
-      if (it != allFLs.end()) {
-        return *it;
-      }
-      auto factory = RE::IFormFactory::GetConcreteFormFactoryByType<RE::BGSListForm>();
-      auto fl = factory ? factory->Create() : nullptr;
-      if (fl) {
-        fl->SetFormEditorID(edid.c_str());
-        allFLs.push_back(fl);
-      }
-      return fl;
-    }
-
     static RE::BGSKeyword* ProduceOrGetKw(const std::string& keyword) {
       auto& allKeywords = SEDH()->GetFormArray<RE::BGSKeyword>();
       auto it = std::find_if(allKeywords.begin(), allKeywords.end(), [&](const auto& kw) { return kw && kw->formEditorID == keyword.c_str(); });
@@ -95,6 +97,13 @@ class Util {
         allKeywords.push_back(kw);
       }
       return kw;
+    }
+
+    static void CleanFormList(RE::BGSListForm* fl) {
+      if (!fl) return;
+      while (fl->forms.size() > 0) {
+        fl->forms.erase(fl->forms.begin());
+      }
     }
 
     static void MsgBox(const char* message) { RE::DebugMessageBox(message); }
@@ -132,12 +141,13 @@ class Util {
     inline static bool boolSettings[BoolSettingCount];
 
     inline static constexpr SEFormLocView keywordIDs[KeywordsCount] = {{0x13794, cSkyrim}, {0xD61D1, cSkyrim}, {0x13795, cSkyrim}, {0xA82BB, cSkyrim}, {0xFFE, cTng},
-                                                                       {0xFF0, cTng},      {0xFF1, cTng},      {0xFF3, cTng},      {0xFFF, cName},     {0xFFE, cName}};
+                                                                       {0xFF0, cTng},      {0xFF1, cTng},      {0xFF3, cTng},      {0xFFD, cTng},      {0xFFC, cTng},
+                                                                       {0xFFB, cTng},      {0xFFF, cName},     {0xFFE, cName},     {0xFFD, cName}};
     inline static RE::BGSKeyword* keywords[KeywordsCount];
 
     inline static constexpr SEFormLocView raceIDs[RacesCount]{{0x19, cSkyrim}, {0x13745, cSkyrim}};
     inline static RE::TESRace* races[RacesCount];
 
-    inline static constexpr SEFormLocView flIDs[FLCount]{{0xEFF, cName}};
+    inline static constexpr SEFormLocView flIDs[FLCount]{{0xF00, cName}, {0xF01, cName}};
     inline static RE::BGSListForm* fls[FLCount];
 };

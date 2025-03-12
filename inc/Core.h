@@ -2,16 +2,16 @@
 
 #include <Util.h>
 
+#include <unordered_set>
+
 class Core : public Singleton<Core> {
   public:
     bool LoadRaces();
     void LoadNPCs();
 
   private:
-    inline static const std::string cFL[2]{"NudeMalTexts:", "NudeFemTexts:"};
     struct NudeGroup {
         std::string mesh;
-        RE::BGSListForm* texts;
         std::vector<size_t> items;
     };
 
@@ -23,13 +23,18 @@ class Core : public Singleton<Core> {
 
   public:
     void LoadItems();
+    bool IsUnderwear(RE::TESForm* item) { return item && allUndies.find(item->formID) != allUndies.end(); };
+    std::vector<std::pair<RE::TESObjectARMO*, RE::TESObjectARMO*>>::iterator FindPair(RE::TESObjectARMO* undies, const bool isFemale, const bool isFake = false);
+    std::pair<bool, RE::TESObjectARMO*> GetOther(RE::TESObjectARMO* undies, const bool isFemale, const bool isFake = false);
+    std::pair<bool, size_t> GetIdx(RE::TESObjectARMO* undies);
 
   private:
-    std::set<RE::FormID> allUndies;
-    std::vector<RE::TESObjectARMO*> malUndies;
-    std::vector<RE::TESObjectARMO*> femUndies;
+    std::unordered_set<RE::FormID> allUndies;
+    std::unordered_set<RE::TESObjectARMO*> fakeUndies;
+    std::vector<std::pair<RE::TESObjectARMO*, RE::TESObjectARMO*>> malUndies;
+    std::vector<std::pair<RE::TESObjectARMO*, RE::TESObjectARMO*>> femUndies;
     void ProcessItem(RE::TESObjectARMO* item, const bool isFemale);
-    bool IsUnderwear(RE::TESForm* item) { return allUndies.find(item->formID) != allUndies.end(); };
+    void ProcessFakes(std::vector<std::pair<RE::TESObjectARMO*, RE::TESObjectARMO*>>& undies);
 
   public:
     void AddCategory(const std::string& parent, const std::string& name, const std::vector<std::string>& wildCards, const std::vector<RE::BGSKeyword*>& keywords,
@@ -58,21 +63,35 @@ class Core : public Singleton<Core> {
      * @brief Retrieves the underwear object based on the specified parameters.
      *
      * @param isFemale A boolean indicating if the character is female.
-     * @param cat The category of the underwear.
      * @param meshGroup The mesh group of the underwear.
+     * @param cat The category of the underwear.
      * @param choice The choice index starting from 0 up to the count of available items.
      * @param onlyActive A boolean indicating if only active underwear should be considered.
      * @return A pointer to the TESObjectARMO representing the selected underwear.
      */
-    RE::TESObjectARMO* GetUnderwear(const bool isFemale, const NudeGroup* meshGroup, const size_t cat, const size_t choice, const bool onlyActive);
+    std::pair<RE::TESObjectARMO*, RE::TESObjectARMO*>* GetItem(const bool isFemale, const NudeGroup* meshGroup, const size_t cat, const size_t choice, const bool onlyActive);
 
   public:
     RE::ActorEquipManager* eq;
+    bool processingPlayer{false};
     Util::eRes ProcessActor(RE::Actor* actor);
-    RE::TESObjectARMO* GetActorUndies(RE::Actor* actor);
-    Util::eRes SetActorUndies(RE::Actor* actor, const int itemIdx, const bool isUser = false);
+    Util::eRes ProcessPlayer(RE::Actor* actor);
+    std::pair<RE::TESObjectARMO*, RE::TESObjectARMO*>* GetActorItem(RE::Actor* actor);
+    Util::eRes SetActorItem(RE::Actor* actor, const int itemIdx, const bool isUser = false);
+    bool IsExcluded(RE::Actor* actor);
+    Util::eRes TryExclude(RE::Actor* actor, const bool toExclude);
 
   private:
+    bool loggedExcluded = false;
+
     std::map<RE::Actor*, Util::eRes> processedActors;
     std::pair<NudeGroup*, size_t> CategorizeNPC(RE::TESNPC* npc);
+    void UpdateActorItems(RE::Actor* actor, RE::TESObjectREFR::InventoryItemMap& inv);
+
+  public:
+    bool IsCovering(RE::Actor* actor, RE::TESObjectARMO* armor);
+    bool HasCover(RE::Actor* actor);
+
+  private:
+    std::vector<RE::BGSKeyword*> relevantKeys[2];
 };

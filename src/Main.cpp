@@ -35,8 +35,11 @@ static void EventListener(SKSE::MessagingInterface::Message* message) {
     core->LoadNPCs();
     core->LoadItems();
     SKSE::log::info("{} finished initialization.", Util::cName);
-    Events::RegisterEvents();
+    events->RegisterEvents();
     Hooks::Install();
+  }
+  if (message->type == SKSE::MessagingInterface::kPostLoadGame || message->type == SKSE::MessagingInterface::kNewGame) {
+    events->gameLoaded = true;
   }
 }
 
