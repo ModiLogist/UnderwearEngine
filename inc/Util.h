@@ -18,9 +18,6 @@ class Util {
     inline static constexpr std::string_view cSkyrim{"Skyrim.esm"};
     inline static constexpr RE::BGSBipedObjectForm::BipedObjectSlot cSlot32{RE::BGSBipedObjectForm::BipedObjectSlot::kBody};
     inline static constexpr RE::BGSBipedObjectForm::BipedObjectSlot cSlot52{RE::BGSBipedObjectForm::BipedObjectSlot::kModPelvisSecondary};
-    inline static constexpr SEFormLocView coverID{0xAFF, cTng};
-
-    enum eRes { resOk = 0, resFail = 1, resWarn = 2 };
 
     enum eBoolSetting { bsSomething, BoolSettingCount };
     enum eKeywords {
@@ -78,6 +75,8 @@ class Util {
       return races[idx];
     }
 
+    static bool IsBaseCover(RE::TESObjectARMO* down) { return FormToLocView(down) != Util::coverID; }
+
     static RE::BGSListForm* FormList(const size_t idx) {
       if (idx >= FLCount) return nullptr;
       if (!fls[idx]) fls[idx] = LoadForm<RE::BGSListForm>(flIDs[idx]);
@@ -97,13 +96,6 @@ class Util {
         allKeywords.push_back(kw);
       }
       return kw;
-    }
-
-    static void CleanFormList(RE::BGSListForm* fl) {
-      if (!fl) return;
-      while (fl->forms.size() > 0) {
-        fl->forms.erase(fl->forms.begin());
-      }
     }
 
     static void MsgBox(const char* message) { RE::DebugMessageBox(message); }
@@ -150,4 +142,6 @@ class Util {
 
     inline static constexpr SEFormLocView flIDs[FLCount]{{0xF00, cName}, {0xF01, cName}};
     inline static RE::BGSListForm* fls[FLCount];
+
+    inline static constexpr SEFormLocView coverID{0xAFF, cTng};
 };

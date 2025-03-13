@@ -38,8 +38,11 @@ static void EventListener(SKSE::MessagingInterface::Message* message) {
     events->RegisterEvents();
     Hooks::Install();
   }
+  if (message->type == SKSE::MessagingInterface::kPreLoadGame) {
+    core->ResetProcessed();
+  }
   if (message->type == SKSE::MessagingInterface::kPostLoadGame || message->type == SKSE::MessagingInterface::kNewGame) {
-    events->gameLoaded = true;
+    Hooks::ReProcessActors(message->type == SKSE::MessagingInterface::kNewGame);
   }
 }
 

@@ -25,12 +25,15 @@ class Core : public Singleton<Core> {
     void LoadItems();
     bool IsUnderwear(RE::TESForm* item) { return item && allUndies.find(item->formID) != allUndies.end(); };
     std::vector<std::pair<RE::TESObjectARMO*, RE::TESObjectARMO*>>::iterator FindPair(RE::TESObjectARMO* undies, const bool isFemale, const bool isFake = false);
-    std::pair<bool, RE::TESObjectARMO*> GetOther(RE::TESObjectARMO* undies, const bool isFemale, const bool isFake = false);
-    std::pair<bool, size_t> GetIdx(RE::TESObjectARMO* undies);
+    RE::TESObjectARMO* GetOther(RE::TESObjectARMO* undies, const bool isFemale, const bool isFake = false);
+    std::pair<RE::SEX, size_t> GetIdx(RE::TESObjectARMO* undies, const bool isFake = false);
 
   private:
+    struct FormComparator {
+        bool operator()(const RE::TESForm* lhs, const RE::TESForm* rhs) const { return lhs->formID < rhs->formID; }
+    };
     std::unordered_set<RE::FormID> allUndies;
-    std::unordered_set<RE::TESObjectARMO*> fakeUndies;
+    std::set<RE::TESObjectARMO*, FormComparator> fakeUndies;
     std::vector<std::pair<RE::TESObjectARMO*, RE::TESObjectARMO*>> malUndies;
     std::vector<std::pair<RE::TESObjectARMO*, RE::TESObjectARMO*>> femUndies;
     void ProcessItem(RE::TESObjectARMO* item, const bool isFemale);
@@ -72,25 +75,33 @@ class Core : public Singleton<Core> {
     std::pair<RE::TESObjectARMO*, RE::TESObjectARMO*>* GetItem(const bool isFemale, const NudeGroup* meshGroup, const size_t cat, const size_t choice, const bool onlyActive);
 
   public:
-    RE::ActorEquipManager* eq;
-    bool processingPlayer{false};
-    Util::eRes ProcessActor(RE::Actor* actor);
-    Util::eRes ProcessPlayer(RE::Actor* actor);
-    std::pair<RE::TESObjectARMO*, RE::TESObjectARMO*>* GetActorItem(RE::Actor* actor);
-    Util::eRes SetActorItem(RE::Actor* actor, const int itemIdx, const bool isUser = false);
+    void ResetProcessed() { processedActors.clear(); }
+    void ProcessPlayer(RE::Actor* actor, RE::TESObjectARMO* armor = nullptr, const bool equipped = true);
+    void ProcessActor(RE::Actor* actor);
+    bool IsProcessed(RE::Actor* actor) { return processedActors.find(actor) != processedActors.end(); }
+    std::pair<RE::TESObjectARMO*, RE::TESObjectARMO*>* GetActorItem(RE::Actor* actor, const bool noUpdate = false);
+    void SetActorItem(RE::Actor* actor, const int itemIdx, const bool isUser = false);
     bool IsExcluded(RE::Actor* actor);
-    Util::eRes TryExclude(RE::Actor* actor, const bool toExclude);
+    void TryExclude(RE::Actor* actor, const bool toExclude);
 
   private:
     bool loggedExcluded = false;
 
-    std::map<RE::Actor*, Util::eRes> processedActors;
-    std::pair<NudeGroup*, size_t> CategorizeNPC(RE::TESNPC* npc);
+    std::set<RE::Actor*> processedActors;
+    std::pair<NudeGroup*, size_t> CategorizeNPC(RE::TESNPC* npc, const bool isUser);
     void UpdateActorItems(RE::Actor* actor, RE::TESObjectREFR::InventoryItemMap& inv);
 
   public:
+    bool ShouldHave(RE::Actor* actor);
+    void WearUndies(RE::Actor* actor, std::pair<RE::TESObjectARMO*, RE::TESObjectARMO*>* undies, RE::TESObjectARMO* except = nullptr);
+    void TakeOffUndies(RE::Actor* actor, const bool justUp = false);
+
+  private:
+    RE::ActorEquipManager* eq;
+
+  public:
     bool IsCovering(RE::Actor* actor, RE::TESObjectARMO* armor);
-    bool HasCover(RE::Actor* actor);
+    bool HasCover(RE::Actor* actor, RE::TESObjectARMO* except = nullptr);
 
   private:
     std::vector<RE::BGSKeyword*> relevantKeys[2];

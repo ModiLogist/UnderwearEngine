@@ -4,11 +4,6 @@
 Events* events = Events::GetSingleton();
 
 void Events::RegisterEvents() {
-  // coverKeys.clear();
-  // coverKeys.push_back(Tng::Key(Tng::kyCovering));
-  // coverKeys.push_back(Tng::Key(Tng::kyRevealingF));
-  // coverKeys.push_back(Tng::Key(Tng::kyRevealingM));
-  // showErrMessage = true;
   const auto sourceHolder = RE::ScriptEventSourceHolder::GetSingleton();
   sourceHolder->AddEventSink<RE::TESEquipEvent>(GetSingleton());
   sourceHolder->AddEventSink<RE::TESObjectLoadedEvent>(GetSingleton());
@@ -25,38 +20,35 @@ RE::BSEventNotifyControl Events::ProcessEvent(const RE::TESEquipEvent* event, RE
     justProcessed.erase(actor);
     return RE::BSEventNotifyControl::kContinue;
   }
-  if (actor->IsPlayerRef()) {
-    if (core->processingPlayer) return RE::BSEventNotifyControl::kContinue;
-    playerRes = core->ProcessPlayer(actor);
-    if (playerRes == Util::resFail) return RE::BSEventNotifyControl::kContinue;
-    if (armor->HasKeyword(Util::Key(Util::kyItemFake))) {
-      auto pair = core->FindPair(armor, npc->IsFemale());
+  if (armor->HasKeyword(Util::Key(Util::kyItemFake)) && actor->IsPlayerRef()) {
+    core->ProcessPlayer(actor, armor, event->equipped);
+    return RE::BSEventNotifyControl::kContinue;
+  }
+  if (core->IsUnderwear(armor)) {
+    if (actor->IsPlayerTeammate() && armor->HasKeyword(Util::Key(Util::kyItemFake))) {
+      auto undies = core->GetActorItem(actor);
       if (event->equipped) {
-        if (!core->HasCover(actor) && !actor->GetWornArmor(Util::cSlot32)) core->eq->EquipObject(actor, pair->first, nullptr, 1, nullptr, false, false, false, true);
-        if (auto pcUndies = Util::FormList(Util::flPCUndies)) {
-          Util::CleanFormList(pcUndies);
-          pcUndies->AddForm(pair->first);
-        }
+        if (undies) core->WearUndies(actor, undies, armor);
       } else {
-        if (actor->GetWornArmor(pair->first->GetFormID())) core->eq->UnequipObject(actor, pair->first, nullptr, 1, nullptr, false, false, false, true);
-        if (auto pcUndies = Util::FormList(Util::flPCUndies)) Util::CleanFormList(pcUndies);
+        if (undies) core->TakeOffUndies(actor, true);
       }
     }
+    return RE::BSEventNotifyControl::kContinue;
   }
-  if (core->IsCovering(actor, armor) && !event->equipped) {
+  if (!event->equipped && core->IsCovering(actor, armor) && !core->HasCover(actor, armor)) {
     justProcessed[actor] = armor;
-    auto pair = core->GetActorItem(actor);
-    if (!pair) return RE::BSEventNotifyControl::kContinue;
-    if (actor->GetWornArmor(pair->second->GetFormID())) core->eq->EquipObject(actor, pair->first, nullptr, 1, nullptr, true, false, false, false);
+    auto undies = core->GetActorItem(actor);
+    if (!undies || !actor->GetWornArmor(undies->second->formID)) return RE::BSEventNotifyControl::kContinue;
+    core->WearUndies(actor, undies, armor);
   }
   return RE::BSEventNotifyControl::kContinue;
 }
 
 RE::BSEventNotifyControl Events::ProcessEvent(const RE::TESObjectLoadedEvent* event, RE::BSTEventSource<RE::TESObjectLoadedEvent>*) {
   if (!event) return RE::BSEventNotifyControl::kContinue;
-  // const auto actor = RE::TESForm::LookupByID<RE::Actor>(event->GetFormID());
-  // if (actor && actor->IsPlayerRef()) core->PostProcessActors();
-  // auto base = Core::GetSingleton();
-  // base->ProcessActor(actor);
+  const auto actor = RE::TESForm::LookupByID<RE::Actor>(event->formID);
+  if (actor && actor->IsPlayerRef()) {
+    core->ProcessPlayer(actor);
+  }
   return RE::BSEventNotifyControl::kContinue;
 }
