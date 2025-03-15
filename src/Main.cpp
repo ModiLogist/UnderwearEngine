@@ -23,13 +23,13 @@ static void InitializeLogging() {
 
 static void EventListener(SKSE::MessagingInterface::Message* message) {
   if (message->type == SKSE::MessagingInterface::kDataLoaded) {
-    if (!Util::SEDH()->LookupModByName(Util::cName)) {
-      const char* err = fmt::format("Mod [{}] was not found! Make sure that the mod is active in your plugin load order!", Util::cName).c_str();
-      Util::MsgBox(err);
+    if (!ut->SEDH()->LookupModByName(ut->cName)) {
+      const char* err = fmt::format("Mod [{}] was not found! Make sure that the mod is active in your plugin load order!", ut->cName).c_str();
+      ut->MsgBox(err);
       return;
     }
     if (!core->LoadRaces()) {
-      Util::MsgBox("NUDE: Could not load necessary data, it won't apply the underwear to NPCs!");
+      ut->MsgBox("NUDE: Could not load necessary data, it won't apply the underwear to NPCs!");
       return;
     }
     core->LoadNPCs();

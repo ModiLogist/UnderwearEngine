@@ -24,9 +24,7 @@ class Core : public Singleton<Core> {
   public:
     void LoadItems();
     bool IsUnderwear(RE::TESForm* item) { return item && allUndies.find(item->formID) != allUndies.end(); };
-    std::vector<std::pair<RE::TESObjectARMO*, RE::TESObjectARMO*>>::iterator FindPair(RE::TESObjectARMO* undies, const bool isFemale, const bool isFake = false);
-    RE::TESObjectARMO* GetOther(RE::TESObjectARMO* undies, const bool isFemale, const bool isFake = false);
-    std::pair<RE::SEX, size_t> GetIdx(RE::TESObjectARMO* undies, const bool isFake = false);
+    RE::TESObjectARMO* GetOther(RE::TESObjectARMO* undies, const RE::SEX sex = RE::SEX::kNone, const bool isFake = false);
 
   private:
     struct FormComparator {
@@ -37,21 +35,30 @@ class Core : public Singleton<Core> {
     std::vector<std::pair<RE::TESObjectARMO*, RE::TESObjectARMO*>> malUndies;
     std::vector<std::pair<RE::TESObjectARMO*, RE::TESObjectARMO*>> femUndies;
     void ProcessItem(RE::TESObjectARMO* item, const bool isFemale);
-    void ProcessFakes(std::vector<std::pair<RE::TESObjectARMO*, RE::TESObjectARMO*>>& undies);
+    void ProcessFakes(const bool isFemale);
+    std::vector<std::pair<RE::TESObjectARMO*, RE::TESObjectARMO*>>::iterator FindPair(const RE::FormID& formID, const bool isFemale, const bool isFake = false);
+    std::vector<std::pair<RE::TESObjectARMO*, RE::TESObjectARMO*>>::iterator FindPair(const SEFormLoc& formLoc, const bool isFemale, const bool isFake = false);
+    std::pair<RE::SEX, size_t> GetIdx(const RE::FormID& formID, const bool isFake = false);
+    std::pair<RE::SEX, size_t> GetIdx(const SEFormLoc& formLoc, const bool isFake = false);
 
   public:
     void AddCategory(const std::string& parent, const std::string& name, const std::vector<std::string>& wildCards, const std::vector<RE::BGSKeyword*>& keywords,
-                     const std::vector<RE::TESFaction*>& factions, const float chance = 0.0f);
-    void AddItemsToCategory(const std::string& name, const std::vector<SEFormLoc>& undies, const bool isFemale);
+                     const std::vector<RE::TESFaction*>& factions, const std::vector<RE::TESRace*>& races, const std::vector<RE::TESNPC*>& npcs, const std::set<SEFormLoc>& undies,
+                     RE::SEX sex, const float chance = 0.0f);
+    void AddItemsToCategory(const std::string& parent, const std::string& name, const std::set<SEFormLoc>& undies);
 
   private:
     struct NudeCategory {
-        std::string name;
         std::string parent;
+        std::string name;
         std::vector<std::string> wildCards;
         std::vector<RE::BGSKeyword*> keywords;
         std::vector<RE::TESFaction*> factions;
+        std::vector<RE::TESRace*> races;
+        std::vector<RE::TESNPC*> npcs;
+        RE::SEX sex;
         float chance;
+        std::vector<NudeCategory> children;
         std::map<size_t, bool> undies[2];
         size_t npcCount;
     };

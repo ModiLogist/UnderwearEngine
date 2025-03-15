@@ -1,12 +1,14 @@
 #pragma once
 
+class Util;
 class Core;
 class Events;
 
+extern Util* ut;
 extern Core* core;
 extern Events* events;
 
-class Util {
+class Util : public Singleton<Util> {
   public:
     inline static constexpr char cDelimChar{'~'};
     inline static constexpr char cColonChar{':'};
@@ -40,93 +42,31 @@ class Util {
     enum eRaces { raceDefault, raceDefBeast, RacesCount };
     enum eFLs { flExcluded, flPCUndies, FLCount };
 
-  public:
-    static RE::TESDataHandler* SEDH() {
-      if (!sedh) sedh = RE::TESDataHandler::GetSingleton();
-      return sedh;
-    }
+    RE::TESDataHandler* SEDH();
 
     template <typename T>
-    static constexpr auto LoadForm(const SEFormLocView& loc) {
+    constexpr auto LoadForm(const SEFormLocView& loc) {
       return SEDH()->LookupForm<T>(loc.first, loc.second);
     }
 
-    static bool GetBoolSetting(const size_t idx) { return idx < BoolSettingCount ? boolSettings[idx] : false; };
-    static void SetBoolSetting(const size_t idx, const bool value) {
-      if (idx < BoolSettingCount) boolSettings[idx] = value;
-    };
+    bool GetBoolSetting(const size_t idx);
+    void SetBoolSetting(const size_t idx, const bool value);
 
-    static RE::BGSKeyword* Key(const size_t idx) {
-      if (idx >= KeywordsCount) return nullptr;
-      if (!keywords[idx]) keywords[idx] = LoadForm<RE::BGSKeyword>(keywordIDs[idx]);
-      return keywords[idx];
-    }
+    RE::BGSKeyword* Key(const size_t idx);
+    std::vector<RE::BGSKeyword*> Keys(const size_t first, const size_t last);
 
-    static std::vector<RE::BGSKeyword*> Keys(const size_t first, const size_t last) {
-      std::vector<RE::BGSKeyword*> res = {};
-      if (last >= KeywordsCount) return res;
-      for (auto i = first; i <= last; i++) res.push_back(Key(i));
-      return res;
-    }
+    RE::TESRace* Race(const size_t idx);
+    bool IsBaseCover(RE::TESObjectARMO* down);
 
-    static RE::TESRace* Race(const size_t idx) {
-      if (idx >= RacesCount) return nullptr;
-      if (!races[idx]) races[idx] = LoadForm<RE::TESRace>(raceIDs[idx]);
-      return races[idx];
-    }
+    RE::BGSListForm* FormList(const size_t idx);
+    RE::BGSKeyword* ProduceOrGetKw(const std::string& keyword);
 
-    static bool IsBaseCover(RE::TESObjectARMO* down) { return FormToLocView(down) != Util::coverID; }
+    void MsgBox(const char* message);
 
-    static RE::BGSListForm* FormList(const size_t idx) {
-      if (idx >= FLCount) return nullptr;
-      if (!fls[idx]) fls[idx] = LoadForm<RE::BGSListForm>(flIDs[idx]);
-      return fls[idx];
-    }
-
-    static RE::BGSKeyword* ProduceOrGetKw(const std::string& keyword) {
-      auto& allKeywords = SEDH()->GetFormArray<RE::BGSKeyword>();
-      auto it = std::find_if(allKeywords.begin(), allKeywords.end(), [&](const auto& kw) { return kw && kw->formEditorID == keyword.c_str(); });
-      if (it != allKeywords.end()) {
-        return *it;
-      }
-      const auto factory = RE::IFormFactory::GetConcreteFormFactoryByType<RE::BGSKeyword>();
-      auto kw = factory ? factory->Create() : nullptr;
-      if (kw) {
-        kw->formEditorID = keyword;
-        allKeywords.push_back(kw);
-      }
-      return kw;
-    }
-
-    static void MsgBox(const char* message) { RE::DebugMessageBox(message); }
-
-    static SEFormLoc FormToLoc(RE::TESForm* form) {
-      std::string filename = form->GetFile(0) ? std::string(form->GetFile(0)->GetFilename()) : "NoFile";
-      auto formID = form->GetFormID() < 0xFF000000 ? form->GetLocalFormID() : form->GetFormID();
-      return {formID, filename};
-    }
-
-    static SEFormLocView FormToLocView(RE::TESForm* form) {
-      auto filename = form->GetFile(0) ? form->GetFile(0)->GetFilename() : "NoFile";
-      auto formID = form->GetFormID() < 0xFF000000 ? form->GetLocalFormID() : form->GetFormID();
-      return {formID, filename};
-    }
-
-    static SEFormLoc StrToLoc(const std::string recordStr) {
-      const size_t sepLoc = recordStr.find(cDelimChar);
-      if (sepLoc == std::string::npos) return {0, ""};
-      const RE::FormID formID = std::strtol(recordStr.substr(0, sepLoc).data(), nullptr, 0);
-      const std::string modName = recordStr.substr(sepLoc + 1);
-      return std::make_pair(formID, modName);
-    }
-
-    static std::string FormToStr(RE::TESForm* form) {
-      if (!form || !form->GetFile(0)) return "";
-      std::ostringstream oss;
-      auto formID = form->GetFormID() < 0xFF000000 ? form->GetLocalFormID() : form->GetFormID();
-      oss << std::hex << formID;
-      return "0x" + oss.str() + cDelimChar + std::string(form->GetFile(0)->GetFilename());
-    }
+    SEFormLoc FormToLoc(RE::TESForm* form);
+    SEFormLocView FormToLocView(RE::TESForm* form);
+    SEFormLoc StrToLoc(const std::string& recordStr);
+    std::string FormToStr(RE::TESForm* form);
 
   private:
     inline static RE::TESDataHandler* sedh;
@@ -144,4 +84,6 @@ class Util {
     inline static RE::BGSListForm* fls[FLCount];
 
     inline static constexpr SEFormLocView coverID{0xAFF, cTng};
+
+    bool try_strtoul(const std::string& str, std::uint32_t& result, int base = 0);
 };

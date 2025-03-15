@@ -33,17 +33,16 @@ RE::ObjectRefHandle* Hooks::RemoveItem::thunk(RE::Character* fromRef, RE::Object
   if (isInternal) return res;
   InternalGuard guard(isInternal);
   auto pair = item ? item->As<RE::TESObjectARMO>() : nullptr;
-  if (!fromRef || !pair || !pair->HasKeyword(Util::Key(Util::kyItemFake))) return res;
-  auto uIdx = core->GetIdx(pair, true);
-  auto vis = core->GetOther(pair, uIdx.first == RE::SEX::kFemale, true);
+  if (!fromRef || !pair || !pair->HasKeyword(ut->Key(ut->kyItemFake))) return res;
+  auto vis = core->GetOther(pair, RE::SEX::kNone, true);
   if (!vis) {
     SKSE::log::critical("NUDE could not process the underwear paired with [{:x}] that was transferred from [{:x}:{}]!", pair->GetFormID(), fromRef->GetFormID(),
                         fromRef->GetFormEditorID());
     return res;
   } else {
     res = RemoveItem::func(fromRef, res, vis, count, reason, extraList, toRef, dropLoc, rotate);
-    if (!core->GetActorItem(fromRef, true) || (fromRef->IsDead() && !fromRef->GetWornArmor(Util::cSlot52))) {
-      core->SetActorItem(fromRef, Util::cNul, false);
+    if (!core->GetActorItem(fromRef, true) || (fromRef->IsDead() && !fromRef->GetWornArmor(ut->cSlot52))) {
+      core->SetActorItem(fromRef, ut->cNul, false);
     }
   }
   return res;
@@ -54,10 +53,9 @@ void Hooks::AddObjectToContainer::thunk(RE::Character* toRef, RE::TESBoundObject
   if (isInternal || !fromRefr) return;
   InternalGuard guard(isInternal);
   auto pair = item ? item->As<RE::TESObjectARMO>() : nullptr;
-  if (!toRef || !pair || !pair->HasKeyword(Util::Key(Util::kyItemFake))) return;
+  if (!toRef || !pair || !pair->HasKeyword(ut->Key(ut->kyItemFake))) return;
   if (!fromRefr->IsPlayerRef()) return;
-  auto uIdx = core->GetIdx(pair, true);
-  auto vis = core->GetOther(pair, uIdx.first == RE::SEX::kFemale, true);
+  auto vis = core->GetOther(pair, RE::SEX::kNone, true);
   if (!vis) {
     SKSE::log::critical("NUDE could not process the underwear paired with [{:x}] that was transferred to [{:x}:{}]!", pair->GetFormID(), toRef->GetFormID(),
                         toRef->GetFormEditorID());
@@ -65,8 +63,7 @@ void Hooks::AddObjectToContainer::thunk(RE::Character* toRef, RE::TESBoundObject
   } else {
     fromRefr->RemoveItem(vis, count, RE::ITEM_REMOVE_REASON::kRemove, nullptr, toRef);
     auto toNPC = toRef->GetActorBase();
-    if (!toNPC) return;
-    if (toNPC->GetSex() == uIdx.first
+    if (toNPC
         //&& !toRef->IsDead()
     ) {
       auto undies = core->GetActorItem(toRef, true);

@@ -20,12 +20,12 @@ RE::BSEventNotifyControl Events::ProcessEvent(const RE::TESEquipEvent* event, RE
     justProcessed.erase(actor);
     return RE::BSEventNotifyControl::kContinue;
   }
-  if (armor->HasKeyword(Util::Key(Util::kyItemFake)) && actor->IsPlayerRef()) {
+  if (armor->HasKeyword(ut->Key(ut->kyItemFake)) && actor->IsPlayerRef()) {
     core->ProcessPlayer(actor, armor, event->equipped);
     return RE::BSEventNotifyControl::kContinue;
   }
   if (core->IsUnderwear(armor)) {
-    if (actor->IsPlayerTeammate() && armor->HasKeyword(Util::Key(Util::kyItemFake))) {
+    if (actor->IsPlayerTeammate() && armor->HasKeyword(ut->Key(ut->kyItemFake))) {
       auto undies = core->GetActorItem(actor);
       if (event->equipped) {
         if (undies) core->WearUndies(actor, undies, armor);
