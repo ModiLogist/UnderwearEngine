@@ -1,10 +1,12 @@
 #pragma once
 
 class Util;
+class Inis;
 class Core;
 class Events;
 
 extern Util* ut;
+extern Inis* inis;
 extern Core* core;
 extern Events* events;
 

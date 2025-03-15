@@ -1,6 +1,7 @@
 #include <Core.h>
 #include <Events.h>
 #include <Hooks.h>
+#include <Inis.h>
 #include <Util.h>
 
 #include <thread>
@@ -34,7 +35,9 @@ static void EventListener(SKSE::MessagingInterface::Message* message) {
     }
     core->LoadNPCs();
     core->LoadItems();
-    SKSE::log::info("{} finished initialization.", Util::cName);
+    inis->LoadMainIni();
+    inis->LoadCategoryFiles();
+    SKSE::log::info("{} finished initialization.", ut->cName);
     events->RegisterEvents();
     Hooks::Install();
   }
